@@ -1,4 +1,9 @@
-# Conditional PixelCNN in PyTorch
+---
+layout: page
+title: Conditional PixelCNN in PyTorch
+tagline: 
+description: A PyTorch implementation of Conditional PixelCNNs to generate between-class examples, tested on MNIST
+---
 
 outline:
 1. Motivation: want to learn PyTorch; want to see if (believable) between-class examples can be generated with a conditional PixelCNN (maybe to train a better classifier)
