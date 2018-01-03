@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Conditional PixelCNN in PyTorch
-tagline: 
+tagline: tagline
 description: A PyTorch implementation of Conditional PixelCNNs to generate between-class examples, tested on MNIST
 ---
 
