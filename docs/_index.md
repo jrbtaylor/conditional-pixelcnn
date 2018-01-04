@@ -42,10 +42,10 @@ PixelRNNs are an autoregressive model of the joint prior distribution for images
 PixelRNNs are slow to train since the recurrence can't be parallelized. 
 Replacing the model recurrence with masked convolutions, where the convolution filter only sees pixels above and to the left, allows for faster training.
 However, it's worth noting that the [original PixelCNN implementation](https://arxiv.org/abs/1601.06759) produced worse results than the PixelRNN.
-One possible reason for the degraded results, conjectured in the [follow-up paper](https://arxiv.org/abs/1606.05328), is the relative simplicity of the ReLU blocks in the PixelCNN compared to the gated connections in the LSTM.
-The Conditional PixelCNN subsequently replaced the ReLUs with gated blocks:
+One possible reason for the degraded results, conjectured in the [follow-up paper](https://arxiv.org/abs/1606.05328), is the relative simplicity of the ReLU activations in the PixelCNN compared to the gated connections in the LSTM.
+The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activations:
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigmaf;(W<sub>g</sub>&lowast; x) </p>
-Another possible reason for this is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
+Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
 ![masked-convolution blind spot](http://github.com/jrbtaylor/conditional-pixelcnn/docs/figure_one_stack.pdf "blind spot")
 
 ## PixelCNNs vs GANs
