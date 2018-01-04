@@ -46,7 +46,7 @@ One possible reason for the degraded results, conjectured in the [follow-up pape
 The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activations:
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigmaf;(W<sub>g</sub>&lowast; x) </p>
 Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
-![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/raw/master/docs/blindspot.png)
+![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/blindspot.png?raw=true)
 
 ## PixelCNNs vs GANs
 
