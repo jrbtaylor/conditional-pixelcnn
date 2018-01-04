@@ -21,5 +21,45 @@ outline:
 s = "Python syntax highlighting"
 print s
 ```
+
 horizontal rule is 3 or more underscores
-___
+
+
+## Motivation
+This is the first of what I expect will be many posts on machine learning.
+I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible - the forced narrow column format would wrap the code and render it unreadable.
+
+For 2018, my new year's resolution is to write 5 posts (as Github project pages). I wanted to play with PixelCNNs and finally try [PyTorch](http://pytorch.org) (I use Tensorflow for my work at [Envision.AI](http://envision.ai) and previously used Theano at McGill) so this post will include my thoughts on both.
+In particular, this post will focus on generating between-class examples.
+
+## Conditional PixelCNNs
+
+PixelCNNs are the convolutional version of PixelRNNs, which treat the pixels in an image as a time-series and predict each pixel after seeing the preceding pixels (above and to the left).
+PixelRNNs are an autoregressive model of the joint prior distribution for images:
+
+<p style="text-align: center;"> p(x) = p(x<sub>0</sub>) &prod; p(x<sub>i</sub>| x<sub>i<</sub>) </p>
+
+PixelRNNs are slow to train since the recurrence can't be parallelized. 
+Replacing the model recurrence with masked convolutions, where the convolution filter only sees pixels above and to the left, allows for faster training.
+However, it's worth noting that the [original PixelCNN implementation](https://arxiv.org/abs/1601.06759) produced worse results than the PixelRNN.
+One possible reason for the degraded results, conjectured in the [follow-up paper](https://arxiv.org/abs/1606.05328), is the relative simplicity of the ReLU blocks in the PixelCNN compared to the gated connections in the LSTM.
+The Conditional PixelCNN subsequently replaced the ReLUs with gated blocks:
+<p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigmaf;(W<sub>g</sub>&lowast; x) </p>
+Another possible reason for this is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
+![masked-convolution blind spot](http://github.com/jrbtaylor/conditional-pixelcnn/docs/figure_one_stack.pdf "blind spot")
+
+## PixelCNNs vs GANs
+
+PixelCNNs and GANs are the two flavors of deep learning models for generating images.
+Currently GANs are receiving a lot of attention, but in many ways I find their popularity unwarranted.
+It's unclear what objective GANs are actually trying to optimize or if the minimum of this objective generalizes to examples outside of the training set.
+This is reflected in the notorious difficulty of training GANs.
+The idea of pitting two nets against each other to produce training signals is interesting and has produced many good papers (notably cycleGAN)
+but I remain unconvinced that they'll be useful for much beyond making flashy posts on social media.
+On the other hand, PixelCNNs have a probabilistic underpinning.
+This allows them to not only generate images by sampling the distribution (left-to-right, top-to-bottom, following their autoregressive definition), but also means they can be used for other tasks as an auxiliary/pre-screening network to detect out-of-domain or adversarial examples, or to model uncertainty.
+I'll cover these extensions more in a later post.
+
+## Implementation
+
+My implementation uses the gated blocks but for rapid implementation, I decided to forego the two-stream solution to the blind spot problem (separating the filters into horizontal and vertical components).
