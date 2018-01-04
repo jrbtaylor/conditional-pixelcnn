@@ -25,7 +25,7 @@ def _clearline():
     print(CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE)
 
 
-def generate_images(model,onehot,img_size=[28,28],cuda=True):
+def generate_images(model,onehot,img_size=[28,28],temp=1.0,cuda=True):
     model.eval()
     y = np.array(list(range(10))*5)
     gen = torch.from_numpy(np.zeros([y.size, 1]+img_size, dtype='float32'))
@@ -39,6 +39,10 @@ def generate_images(model,onehot,img_size=[28,28],cuda=True):
         for c in range(img_size[1]):
             out = model(gen,y)
             p = torch.exp(out)[:,:,r,c]
+            # temperature sampling
+            # note: setting temp too low results in all-black images
+            p = torch.pow(p,1/temp)
+            p = p/torch.sum(p,-1,keepdim=True)
             sample = p.multinomial(1)
             gen[:,:,r,c] = sample.float()/(out.shape[1]-1)
     _clearline()
@@ -202,6 +206,10 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,onehot,loss_fcn,
             best_val = loss
             stall = 0
             torch.save(model,os.path.join(exp_path,'best_checkpoint'))
+            imageio.imsave(os.path.join(exp_path, 'best_generated.jpeg'),
+                           generated[-1].astype('uint8'))
+            imageio.imsave(os.path.join(exp_path, 'best_generated_plots.jpeg'),
+                           plots[-1].astype('uint8'))
         else:
             stall += 1
         if stall>=patience:
