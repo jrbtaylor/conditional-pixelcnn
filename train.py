@@ -25,11 +25,15 @@ def _clearline():
     print(CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE)
 
 
-def generate_images(model,onehot,img_size=[28,28],temp=1.0,cuda=True):
+def generate_images(model,img_size,n_classes,temp=1.0,cuda=True):
     model.eval()
-    y = np.array(list(range(10))*5)
+    y = np.array(list(range(n_classes))*5)
     gen = torch.from_numpy(np.zeros([y.size, 1]+img_size, dtype='float32'))
-    y = onehot(y)
+    def onehot(x):
+        y = np.zeros((1,n_classes),dtype='float32')
+        y[0,x] = 1
+        return y
+    y = torch.from_numpy(np.concatenate([onehot(x) for x in y]))
     if cuda:
         y, gen = y.cuda(), gen.cuda()
     y, gen = Variable(y), Variable(gen)
@@ -86,9 +90,9 @@ def plot_loss(train_loss,val_loss):
     return plot
 
 
-def fit(train_loader,val_loader,model,exp_path,label_preprocess,onehot,loss_fcn,
-        optimizer='adam',learnrate=1e-4,cuda=True,patience=20,max_epochs=200,
-        resume=False):
+def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
+        n_classes=10,optimizer='adam',learnrate=1e-4,cuda=True,
+        patience=20,max_epochs=200,resume=False):
 
     if cuda:
         model = model.cuda()
@@ -102,6 +106,10 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,onehot,loss_fcn,
                      model.parameters(),lr=learnrate,momentum=0.9),
                  'adamax':torch.optim.Adamax(model.parameters(),lr=learnrate)
                  }[optimizer.lower()]
+
+    # load a single example from the iterator to get the image size
+    x = train_loader.sampler.data_source.__getitem__(0)[0]
+    img_size = list(x.numpy().shape[1:])
 
     if not resume:
         stats = {'loss':{'train':[],'val':[]},
@@ -129,7 +137,6 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,onehot,loss_fcn,
         losses = []
         mean_outs = []
         for x,y in bar(dataloader):
-            y = onehot(y)
             label = label_preprocess(x)
             if cuda:
                 x,y = x.cuda(),y.cuda()
@@ -173,7 +180,8 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,onehot,loss_fcn,
                '%4.2f msec/example')%(loss,mean_out,time_per_example*1000))
 
         # Generate images and save gif
-        new_frame = tile_images(generate_images(model,onehot))
+        new_frame = tile_images(generate_images(model,img_size=img_size,
+                                                n_classes=n_classes))
         generated.append(new_frame)
         imageio.mimsave(os.path.join(exp_path, 'generated.gif'),
                         np.array(generated), format='gif', loop=0, fps=2)
