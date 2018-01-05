@@ -13,7 +13,7 @@ import data
 import model
 import train
 
-def run(batch_size=64,n_features=200,n_layers=6,n_bins=8,
+def run(batch_size=64,n_features=150,n_layers=6,n_bins=4,
         optimizer='adam',learnrate=1e-4,dropout=0.5,exp_name='pixelCNN',
         exp_dir='/home/jason/experiments/conditional-pixelcnn/',
         n_classes=10,cuda=True,resume=False):
