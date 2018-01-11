@@ -25,6 +25,8 @@ print s
 horizontal rule is 3 or more underscores
 
 
+
+
 ## Motivation
 This is the first of what I expect will be many posts on machine learning.
 I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible - the forced narrow column format would wrap the code and render it unreadable.
@@ -47,7 +49,7 @@ Replacing the model recurrence with masked convolutions, where the convolution f
 However, it's worth noting that the [original PixelCNN implementation](https://arxiv.org/abs/1601.06759) produced worse results than the PixelRNN.
 One possible reason for the degraded results, conjectured in the [follow-up paper](https://arxiv.org/abs/1606.05328), is the relative simplicity of the ReLU activations in the PixelCNN compared to the gated connections in the LSTM.
 The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activations:
-<p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigmaf;(W<sub>g</sub>&lowast; x) </p>
+<p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigma;(W<sub>g</sub>&lowast; x) </p>
 Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
 ![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/blindspot.png?raw=true)
 
@@ -78,10 +80,14 @@ I'd be interested in hearing if anyone has tried combining PixelCNNs and GANs. P
 ## Implementation
 
 My implementation uses the gated blocks but for rapid implementation, I decided to forego the two-stream solution to the blind spot problem (separating the filters into horizontal and vertical components).
+There's code available for solving the blind-spot problem in Tensorflow and it'd be fairly trivial to re-write it in PyTorch.
 This way the masking is simple: everything below and to the right of the current pixel is zeroed-out in the filter and in the first layer the current pixel is also set to zero in the filter.
 ```python
 class MaskedConv(nn.Conv2d):
     def __init__(self,mask_type,in_channels,out_channels,kernel_size,stride=1):
+        """
+        mask_type: 'A' for first layer of network, 'B' for all others
+        """
         super(MaskedConv,self).__init__(in_channels,out_channels,kernel_size,
                                         stride,padding=kernel_size//2)
         assert mask_type in ('A','B')
@@ -104,7 +110,7 @@ class GatedRes(nn.Module):
     def __init__(self,in_channels,out_channels,n_classes,kernel_size=3,stride=1,
                  aux_channels=0):
         super(GatedRes,self).__init__()
-        self.conv = MaskedConv('A',in_channels,2*out_channels,kernel_size,
+        self.conv = MaskedConv('B',in_channels,2*out_channels,kernel_size,
                                stride)
         self.y_embed = nn.Linear(n_classes,2*out_channels)
         self.out_channels = out_channels
@@ -210,13 +216,17 @@ class PixelCNN(nn.Module):
         assert len(features)==0
         return x
 ```
-MNIST is practically black and white, so I discretized the label to only 8 grayscale levels for the purposes of calculating cross-entropy loss.
+MNIST is practically black and white, so I discretized the label to only 4 grayscale levels for the purposes of calculating cross-entropy loss.
 On natural images, the number of output levels would obviously need to be higher.
 All layers in my network have 200 features.
-For training, I used Adam with a learning rate of 10<sup>-4</sup> and dropout rate of 0.5.
+For training, I used Adam with a learning rate of 10<sup>-4</sup> and dropout rate of 0.8.
+
+The higher number of features (than is necessary for MNIST) and higher dropout is a trade-off of training time vs regularization.
+This is a trick that is rarely mentioned in papers but is very helpful for avoiding overfitting &mdash; I've only seen it mentioned in a paper for training on action recognition in video, where overfitting is a problem due to the high dimensionality vs the dataset sizes currently available.
 
 I have a single GTX1070 GPU at home, so I didn't run any kind of hyperparameter optimization:
 the ability to guess reasonable hyperparameters and have your model work on the first attempt says a lot about the robustness of Adam + batch normalization + dropout.
+The learning rate definitely could've been higher but this makes for a more interesting GIF.
 
 
 
