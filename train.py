@@ -92,7 +92,7 @@ def plot_loss(train_loss,val_loss):
 
 def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
         n_classes=10,optimizer='adam',learnrate=1e-4,cuda=True,
-        patience=20,max_epochs=200,resume=False):
+        patience=10,max_epochs=200,resume=False):
 
     if cuda:
         model = model.cuda()
@@ -179,14 +179,12 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
         print(('            Validation loss = %6.4f    mean output = %1.2f    '
                '%4.2f msec/example')%(loss,mean_out,time_per_example*1000))
 
-        # Generate images and save gif
+        # Generate images and update gif
         new_frame = tile_images(generate_images(model,img_size=img_size,
                                                 n_classes=n_classes))
         generated.append(new_frame)
-        imageio.mimsave(os.path.join(exp_path, 'generated.gif'),
-                        np.array(generated), format='gif', loop=0, fps=2)
 
-        # Save gif again with loss plot
+        # Update gif with loss plot
         plot_frame = plot_loss(stats['loss']['train'],stats['loss']['val'])
         if new_frame.ndim==2:
             new_frame = np.repeat(new_frame[:,:,np.newaxis],3,axis=2)
@@ -196,14 +194,12 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
         plots.append(np.concatenate((plot_frame.astype('uint8'),
                                      new_frame.astype('uint8')),
                                     axis=1))
-        imageio.mimsave(os.path.join(exp_path, 'generated_plot.gif'),
-                        np.array(plots), format='gif', loop=0, fps=2)
 
-        # Save gif frames so it can resume training if interrupted
+        # Save gif arrays so it can resume training if interrupted
         np.save(os.path.join(exp_path,'generated.npy'),generated)
         np.save(os.path.join(exp_path,'generated_plots.npy'),plots)
 
-        # Save stats and update plots
+        # Save stats and update training curves
         with open(statsfile,'w') as sf:
             json.dump(stats,sf)
         plot_stats(stats,exp_path)
@@ -218,6 +214,10 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
                            generated[-1].astype('uint8'))
             imageio.imsave(os.path.join(exp_path, 'best_generated_plots.jpeg'),
                            plots[-1].astype('uint8'))
+            imageio.mimsave(os.path.join(exp_path, 'generated.gif'),
+                            np.array(generated), format='gif', loop=0, fps=2)
+            imageio.mimsave(os.path.join(exp_path, 'generated_plot.gif'),
+                            np.array(plots), format='gif', loop=0, fps=2)
         else:
             stall += 1
         if stall>=patience:
