@@ -8,6 +8,9 @@ import torch.nn as nn
 
 class MaskedConv(nn.Conv2d):
     def __init__(self,mask_type,in_channels,out_channels,kernel_size,stride=1):
+        """
+        mask_type: 'A' for first layer of network, 'B' for all others
+        """
         super(MaskedConv,self).__init__(in_channels,out_channels,kernel_size,
                                         stride,padding=kernel_size//2)
         assert mask_type in ('A','B')
@@ -25,7 +28,7 @@ class GatedRes(nn.Module):
     def __init__(self,in_channels,out_channels,n_classes,kernel_size=3,stride=1,
                  aux_channels=0):
         super(GatedRes,self).__init__()
-        self.conv = MaskedConv('A',in_channels,2*out_channels,kernel_size,
+        self.conv = MaskedConv('B',in_channels,2*out_channels,kernel_size,
                                stride)
         self.y_embed = nn.Linear(n_classes,2*out_channels)
         self.out_channels = out_channels
@@ -90,10 +93,9 @@ class PixelCNN(nn.Module):
             self.layers.append(block)
 
         # Last layer: project to n_bins (output is [-1, n_bins, h, w])
-        self.layers.append(
-            nn.Sequential(nn.Dropout2d(dropout),
-                          nn.Conv2d(n_features,n_bins,1),
-                          nn.LogSoftmax(dim=1)))
+        self.dropout = nn.Dropout2d(dropout)
+        self.layers.append(GatedRes(n_features,n_bins,n_classes))
+        self.layers.append(nn.LogSoftmax(dim=1))
 
     def forward(self,x,y):
         # Add channel of ones so network can tell where padding is
@@ -116,6 +118,9 @@ class PixelCNN(nn.Module):
             x = self.layers[i](torch.stack((x,features.pop())),y)
 
         # Last layer
+        x = self.dropout(x)
+        i += 1
+        x = self.layers[i](x,y)
         i += 1
         x = self.layers[i](x)
         assert i==len(self.layers)-1
