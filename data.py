@@ -3,6 +3,7 @@ Written by Jason Taylor <jasonrbtaylor@gmail.com> 2018-2019
 """
 
 import os
+import random
 
 import numpy as np
 import torch
@@ -17,14 +18,30 @@ def onehot(n_classes):
     return onehot_fcn
 
 
-def loader(dataset,batch_size,n_workers=4):
+def augment(img_size=28,scale=0.1):
+    if random.random()<0.5:  # random crop & upsampling
+            resize = transforms.RandomResizedCrop(
+                img_size, scale=(1-scale,1.0), ratio=(1-scale,1/(1-scale)))
+    else:  # random pad & downsampling
+        left = random.randint(0,int(np.round(scale*img_size)))
+        right = random.randint(0,int(np.round(scale*img_size)-left))
+        top = random.randint(0,int(np.round(scale*img_size)))
+        bottom = random.randint(0, int(np.round(scale*img_size)-top))
+        resize = transforms.Compose([transforms.Pad((left,top,right,bottom)),
+                                     transforms.Resize((img_size,img_size))])
+    return transforms.Compose([resize,transforms.ToTensor()])
+
+
+def loader(dataset, batch_size, n_workers=8):
     assert dataset.lower() in ['mnist','emnist','fashionmnist']
 
-    loader_args = {'batch_size':batch_size, 'num_workers':n_workers,
+    loader_args = {'batch_size':batch_size,
+                   'num_workers':n_workers,
                    'pin_memory':True}
-    datapath = os.path.join(os.getenv('HOME'),'data',dataset.lower())
-    dataset_args = {'root':datapath, 'download':True,
-                    'transform':transforms.ToTensor()}
+    datapath = os.path.join(os.getenv('HOME'), 'data', dataset.lower())
+    dataset_args = {'root':datapath,
+                    'download':True,
+                    'transform':augment()}
 
     if dataset.lower()=='mnist':
         dataset_init = datasets.MNIST
@@ -36,11 +53,12 @@ def loader(dataset,batch_size,n_workers=4):
     else:
         dataset_init = datasets.FashionMNIST
         n_classes = 10
-    dataset_args.update({'target_transform':onehot(n_classes)})
+    onehot_fcn = onehot(n_classes)
+    dataset_args.update({'target_transform':onehot_fcn})
 
     train_loader = torch.utils.data.DataLoader(
         dataset_init(train=True, **dataset_args), shuffle=True, **loader_args)
     val_loader = torch.utils.data.DataLoader(
         dataset_init(train=False, **dataset_args), shuffle=False, **loader_args)
 
-    return train_loader, val_loader
+    return train_loader, val_loader, onehot_fcn
