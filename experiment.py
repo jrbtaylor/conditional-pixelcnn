@@ -2,7 +2,6 @@
 Written by Jason Taylor <jasonrbtaylor@gmail.com> 2018-2019
 """
 
-import argparse
 import json
 import os
 
@@ -12,15 +11,16 @@ import numpy as np
 import data
 import model
 import train
+from vis import generate_between_classes
 
-def run(dataset='mnist', batch_size=64, n_features=150, n_layers=6, n_bins=4,
-        optimizer='adam', learnrate=1e-4, dropout=0.5, exp_name='pixelCNN',
-        exp_dir='/home/jason/experiments/conditional-pixelcnn/',
-        n_classes=10, cuda=True, resume=False):
+def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
+        optimizer='adam', learnrate=1e-4, dropout=0.8, exp_name='pixelCNN',
+        exp_dir='~/experiments/conditional-pixelcnn/', n_classes=10, cuda=True,
+        resume=False):
 
     exp_name += '_%s_%ifeat_%ilayers_%ibins'%(
         dataset, n_features, n_layers, n_bins)
-    exp_dir = os.path.join(exp_dir, exp_name)
+    exp_dir = os.path.join(os.path.expanduser(exp_dir), exp_name)
     if not os.path.isdir(exp_dir):
         os.makedirs(exp_dir)
 
@@ -44,10 +44,12 @@ def run(dataset='mnist', batch_size=64, n_features=150, n_layers=6, n_bins=4,
         net = torch.load(os.path.join(exp_dir, 'last_checkpoint'))
 
     # Data loaders
-    train_loader,val_loader = data.loader(dataset, batch_size)
+    train_loader,val_loader, onehot_fcn = data.loader(dataset, batch_size)
 
     # Up-weight 1s (~8x rarer) to balance loss, interpolate intermediate values
-    weight = torch.from_numpy(np.linspace(1, 8, n_bins, dtype='float32'))
+    weight = np.linspace(1, 5, n_bins, dtype='float32')
+    weight = weight/np.mean(weight)
+    weight = torch.from_numpy(weight)
     if cuda:
         weight = weight.cuda()
 
@@ -58,5 +60,18 @@ def run(dataset='mnist', batch_size=64, n_features=150, n_layers=6, n_bins=4,
 
     # Train
     train.fit(train_loader, val_loader, net, exp_dir, input2label, loss_fcn,
-              n_classes, optimizer, learnrate=learnrate, cuda=cuda,
+              onehot_fcn, n_classes, optimizer, learnrate=learnrate, cuda=cuda,
               resume=resume)
+
+    # Generate some between-class examples
+    generate_between_classes(model, [28, 28], [1, 7],
+                             os.path.join(exp_dir,'1-7.jpeg'), n_classes, cuda)
+    generate_between_classes(model, [28, 28], [3, 8],
+                             os.path.join(exp_dir,'3-8.jpeg'), n_classes, cuda)
+    generate_between_classes(model, [28, 28], [4, 9],
+                             os.path.join(exp_dir,'4-9.jpeg'), n_classes, cuda)
+    generate_between_classes(model, [28, 28], [5, 6],
+                             os.path.join(exp_dir,'5-6.jpeg'), n_classes, cuda)
+
+
+
