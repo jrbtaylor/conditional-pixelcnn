@@ -28,29 +28,30 @@ horizontal rule is 3 or more underscores
 
 
 ## Motivation
-This is the first of what I expect will be many posts on machine learning.
-I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible - the forced narrow column format would wrap the code and render it unreadable.
+This is the first of what I expect will be a few posts.
+I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
 
 For 2018, my new year's resolution is to write 5 posts (as Github project pages). I wanted to play with PixelCNNs and finally try [PyTorch](http://pytorch.org) (I use Tensorflow for my work at [Envision.AI](http://envision.ai) and previously used Theano at McGill) so this post will include my thoughts on both.
-In particular, this post will focus on generating between-class examples.
+In particular, I was curious if PixelCNNs conditioned on class labels could generate believable between-class examples.
 
 
 
 
 ## Conditional PixelCNNs
 
-PixelCNNs are the convolutional version of PixelRNNs, which treat the pixels in an image as a time-series and predict each pixel after seeing the preceding pixels (above and to the left).
+PixelCNNs are the convolutional version of PixelRNNs, which treat the pixels in an image as a sequence and predict each pixel after seeing the preceding pixels (above and to the left).
 PixelRNNs are an autoregressive model of the joint prior distribution for images:
 
 <p style="text-align: center;"> p(x) = p(x<sub>0</sub>) &prod; p(x<sub>i</sub>| x<sub>i<</sub>) </p>
 
-PixelRNNs are slow to train since the recurrence can't be parallelized. 
+PixelRNNs are slow to train since the recurrence can't be parallelized.
 Replacing the model recurrence with masked convolutions, where the convolution filter only sees pixels above and to the left, allows for faster training.
 However, it's worth noting that the [original PixelCNN implementation](https://arxiv.org/abs/1601.06759) produced worse results than the PixelRNN.
 One possible reason for the degraded results, conjectured in the [follow-up paper](https://arxiv.org/abs/1606.05328), is the relative simplicity of the ReLU activations in the PixelCNN compared to the gated connections in the LSTM.
 The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activations:
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigma;(W<sub>g</sub>&lowast; x) </p>
 Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
+
 ![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/blindspot.png?raw=true)
 
 
@@ -58,21 +59,20 @@ Another possible reason offered in the follow-up paper is that stacking masked c
 
 #### PixelCNNs vs GANs
 
-PixelCNNs and GANs are the two (current) flavors of deep learning models for generating images.
-Recently GANs are receiving a lot of attention, but in many ways I find their popularity unwarranted.
+PixelCNNs and GANs are currently the two flavors of deep learning models for generating images.
+GANs are receiving a lot of attention recently, but in many ways I find their popularity unwarranted.
 
-It's unclear what objective GANs are actually trying to optimize and the minimum of the training objective (fooling the discriminator) would result in the generator recreating all the training images.
+It's unclear what objective GANs are actually trying to optimize and the minimum of the training objective (i.e. fooling the discriminator) would result in the generator recreating all the training images.
 This is reflected in the notorious difficulty of training GANs.
 The idea of pitting two nets against each other to produce training signals is interesting and has produced many good papers (notably cycleGAN)
 but I remain unconvinced that they'll be useful for much beyond making flashy posts on social media.
 
-On the other hand, PixelCNNs have a probabilistic underpinning.
+On the other hand, PixelCNNs have a nice probabilistic underpinning.
 This allows them to not only generate images by sampling the distribution (left-to-right, top-to-bottom, following their autoregressive definition), 
-but also means they can be used for other tasks as an auxiliary/pre-screening network to detect out-of-domain or adversarial examples (especially if the main network has attention: the PixelCNN error can be weighted per-pixel by importantance to the main model).
-Going one step further, it may also be possible to estimate uncertainty for new examples with a PixelCNN trained on the same distribution as the main network.
-I'll cover some of these extensions more in a later post.
+but also means they can be used for other tasks. For example: as a pre-screening network to detect out-of-domain or adversarial examples; for detecting outliers in a training set; or estimating uncertainty at test.
+I'll cover some of these extensions more in my next post.
 
-I'd be interested in hearing if anyone has tried combining PixelCNNs and GANs. Perhaps the PixelCNN can be used as a prior or a final stage of the decoder (conditioned on some higher-level learned representation) to avoid some of the training difficulties with GANs.
+I'd be interested in hearing if anyone has tried combining PixelCNNs and GANs. Perhaps the PixelCNN can be used as a prior or as a final stage of the decoder (conditioned on some higher-level learned representation) to avoid some of the training difficulties with GANs.
 
 
 
@@ -102,9 +102,9 @@ class MaskedConv(nn.Conv2d):
 ```
 The implementation for the gated ResNet blocks is slightly more complicated:
 the PixelCNN has shortcut connections between the two halfs of the network, like a U-Net;
-PyTorch allows the forward method of a Module to take multiple inputs ONLY if they're Variables;
+PyTorch allows the forward method of a Module to take multiple inputs *only* if they're Variables;
 since the feature maps from the first half of the network are not Variables, they must be concatenated with the other input (the features from the preceding layer).
-This messiness is avoided with the conditioning vector, since it is a Variable (in this case, the class label).
+This is avoided with the conditioning vector, since it is a Variable (in this case, the class label).
 ```python
 class GatedRes(nn.Module):
     def __init__(self,in_channels,out_channels,n_classes,kernel_size=3,stride=1,
@@ -218,11 +218,11 @@ class PixelCNN(nn.Module):
 ```
 MNIST is practically black and white, so I discretized the label to only 4 grayscale levels for the purposes of calculating cross-entropy loss.
 On natural images, the number of output levels would obviously need to be higher.
-All layers in my network have 200 features.
+All layers in the network have 200 features.
 For training, I used Adam with a learning rate of 10<sup>-4</sup> and dropout rate of 0.8.
 
 The higher number of features (than is necessary for MNIST) and higher dropout is a trade-off of training time vs regularization.
-This is a trick that is rarely mentioned in papers but is very helpful for avoiding overfitting &mdash; I've only seen it mentioned in a paper for training on action recognition in video, where overfitting is a problem due to the high dimensionality vs the dataset sizes currently available.
+This is a trick that is rarely mentioned in papers but is helpful to avoid overfitting &mdash; I've only seen it mentioned in a paper for training on action recognition in video, where overfitting is a problem due to the high dimensionality vs the dataset sizes currently available.
 
 I have a single GTX1070 GPU at home, so I didn't run any kind of hyperparameter optimization:
 the ability to guess reasonable hyperparameters and have your model work on the first attempt says a lot about the robustness of Adam + batch normalization + dropout.
@@ -233,11 +233,30 @@ The learning rate definitely could've been higher but this makes for a more inte
 
 ## Results
 
+![generated images](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/generated.gif?raw=true)
+
+The gif above shows a batch of 50 images (5 examples per class) generated after each epoch throughout training, from seemingly random scribbles to something resembling actual digits.
+Here's the results at the final epoch:
+
+![generated at final epoch](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/best_generated.jpeg?raw=true)
+
+The motivation for this work was to see if a Conditional PixelCNN could also generate reasonable examples between classes.
+This is done by conditioning on soft labels instead of one-hot encoded labels.
+
+Let's try what I'd expect are easily confused pairs of digits: (1,7), (3,8), (4,9), (5,6)
+
+![generated between-class examples: (1,7)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/gen17.png?raw=true)
+
+![generated between-class examples: (3,8)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/gen38.png?raw=true)
+
+![generated between-class examples: (4,9)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/gen49.png?raw=true)
+
+![generated between-class examples: (5,6)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/gen56.png?raw=true)
 
 
 
 
 ## Miscellaneous Thoughts on PyTorch
-1. Debugging something without a compiled computational graph (i.e. like Tensorflow or Theano) is a lot faster
-2. Writing models where you have to initialize every operation/layer/etc. in the constructor and then call them in the forward method seems unnecessarily complicated. This is especially problematic for models with shortcut connections if you write them with loops for arbitrary depth. This cancels out item 1.
-3. 
+1. Debugging something without a compiled computational graph (i.e. like in Tensorflow or Theano) is faster and more intuitive.
+2. Writing models where you have to initialize every operation/layer/etc. in the constructor and then call them in the forward method seems unnecessarily complicated. This is especially error-prone for models with shortcut connections if you write them with loops for arbitrary depth.
+3. Point 2 cancels out point 1 for me. I prefer Tensorflow.
