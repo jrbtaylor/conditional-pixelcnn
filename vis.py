@@ -5,10 +5,15 @@ Written by Jason Taylor <jasonrbtaylor@gmail.com> 2018-2019
 import json
 import os
 
+import imageio
 import matplotlib
 # Disable Xwindows backend before importing matplotlib.pyplot
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
+from progressbar import ProgressBar
+import torch
+from torch.autograd import Variable
 
 
 def plot_stats(stats,savepath):
@@ -44,3 +49,56 @@ def plot_stats(stats,savepath):
     # Loop over stats dict and plot. Dicts within stats get plotted together.
     for key,value in stats.items():
         _plot(value,key)
+
+
+def clearline():
+    CURSOR_UP_ONE = '\x1b[1A'
+    ERASE_LINE = '\x1b[2K'
+    print(CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE)
+
+
+def generate(model, img_size, y, cuda=True):
+    model.eval()
+    gen = torch.from_numpy(np.zeros([y.shape[0], 1]+img_size, dtype='float32'))
+    y = torch.from_numpy(y)
+    if cuda:
+        y, gen = y.cuda(), gen.cuda()
+    y, gen = Variable(y), Variable(gen)
+    bar = ProgressBar()
+    print('Generating images...')
+    for r in bar(range(img_size[0])):
+        for c in range(img_size[1]):
+            out = model(gen, y)
+            p = torch.exp(out)[:, :, r, c]
+            sample = p.multinomial(1)
+            gen[:, :, r, c] = sample.float()/(out.shape[1]-1)
+    clearline()
+    clearline()
+    return (255*gen.data.cpu().numpy()).astype('uint8')
+
+
+def generate_between_classes(model, img_size, classes, saveto,
+                             n_classes, cuda=True):
+    y = np.zeros((1,n_classes), dtype='float32')
+    y[classes] = 1/len(classes)
+    y = np.repeat(y,10,axis=0)
+    gen = tile_images(generate(model, img_size, y, cuda),r=1)
+    imageio.imsave(saveto,gen.astype('uint8'))
+
+
+def tile_images(imgs,r=0):
+    n = len(imgs)
+    h = imgs[0].shape[1]
+    w = imgs[0].shape[2]
+    if r==0:
+        r = int(np.floor(np.sqrt(n)))
+    while n%r!=0:
+        r -= 1
+    c = int(n/r)
+    imgs = np.squeeze(np.array(imgs),axis=1)
+    imgs = np.transpose(imgs,(1,2,0))
+    imgs = np.reshape(imgs,[h,w,r,c])
+    imgs = np.transpose(imgs,(2,3,0,1))
+    imgs = np.concatenate(imgs,1)
+    imgs = np.concatenate(imgs,1)
+    return imgs
