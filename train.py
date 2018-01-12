@@ -16,62 +16,16 @@ from skimage.transform import resize
 import torch
 from torch.autograd import Variable
 
-from plot import plot_stats
+from vis import plot_stats, clearline, generate, tile_images
 
 
-def _clearline():
-    CURSOR_UP_ONE = '\x1b[1A'
-    ERASE_LINE = '\x1b[2K'
-    print(CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE)
-
-
-def generate_images(model,img_size,n_classes,temp=1.0,cuda=True):
-    model.eval()
+def generate_images(model,img_size,n_classes,onehot_fcn,cuda=True):
     y = np.array(list(range(n_classes))*5)
-    gen = torch.from_numpy(np.zeros([y.size, 1]+img_size, dtype='float32'))
-    def onehot(x):
-        y = np.zeros((1,n_classes),dtype='float32')
-        y[0,x] = 1
-        return y
-    y = torch.from_numpy(np.concatenate([onehot(x) for x in y]))
-    if cuda:
-        y, gen = y.cuda(), gen.cuda()
-    y, gen = Variable(y), Variable(gen)
-    bar = ProgressBar()
-    print('Generating images...')
-    for r in bar(range(img_size[0])):
-        for c in range(img_size[1]):
-            out = model(gen,y)
-            p = torch.exp(out)[:,:,r,c]
-            # temperature sampling
-            # note: setting temp too low results in all-black images
-            p = torch.pow(p,1/temp)
-            p = p/torch.sum(p,-1,keepdim=True)
-            sample = p.multinomial(1)
-            gen[:,:,r,c] = sample.float()/(out.shape[1]-1)
-    _clearline()
-    _clearline()
-    return (255*gen.data.cpu().numpy()).astype('uint8')
+    y = np.concatenate([onehot_fcn(x)[np.newaxis,:] for x in y])
+    return generate(model, img_size, y, cuda)
 
 
-def tile_images(imgs):
-    n = len(imgs)
-    h = imgs[0].shape[1]
-    w = imgs[0].shape[2]
-    r = int(np.floor(np.sqrt(n)))
-    while n%r!=0:
-        r -= 1
-    c = int(n/r)
-    imgs = np.squeeze(np.array(imgs),axis=1)
-    imgs = np.transpose(imgs,(1,2,0))
-    imgs = np.reshape(imgs,[h,w,r,c])
-    imgs = np.transpose(imgs,(2,3,0,1))
-    imgs = np.concatenate(imgs,1)
-    imgs = np.concatenate(imgs,1)
-    return imgs
-
-
-def plot_loss(train_loss,val_loss):
+def plot_loss(train_loss, val_loss):
     fig = plt.figure(num=1, figsize=(4, 4), dpi=70, facecolor='w',
                      edgecolor='k')
     plt.plot(range(1,len(train_loss)+1), train_loss, 'r', label='training')
@@ -90,9 +44,9 @@ def plot_loss(train_loss,val_loss):
     return plot
 
 
-def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
-        n_classes=10,optimizer='adam',learnrate=1e-4,cuda=True,
-        patience=10,max_epochs=200,resume=False):
+def fit(train_loader, val_loader, model, exp_path, label_preprocess, loss_fcn,
+        onehot_fcn, n_classes=10, optimizer='adam', learnrate=1e-4, cuda=True,
+        patience=10, max_epochs=200, resume=False):
 
     if cuda:
         model = model.cuda()
@@ -128,6 +82,7 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
         generated = list(np.load(os.path.join(exp_path,'generated.npy')))
         plots = list(np.load(os.path.join(exp_path,'generated_plot.npy')))
         print('Resuming from epoch %i'%start_epoch)
+        model = torch.load(os.path.join(exp_path, 'best_checkpoint'))
 
     def save_img(x,filename):
         Image.fromarray((255*x).astype('uint8')).save(filename)
@@ -157,7 +112,7 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
                 loss.backward()
                 optimizer.step()
             losses.append(loss.data.cpu().numpy())
-        _clearline()
+        clearline()
         return float(np.mean(losses)), np.mean(mean_outs)
 
     for e in range(start_epoch,max_epochs):
@@ -180,8 +135,8 @@ def fit(train_loader,val_loader,model,exp_path,label_preprocess,loss_fcn,
                '%4.2f msec/example')%(loss,mean_out,time_per_example*1000))
 
         # Generate images and update gif
-        new_frame = tile_images(generate_images(model,img_size=img_size,
-                                                n_classes=n_classes))
+        new_frame = tile_images(generate_images(model, img_size, n_classes,
+                                                onehot_fcn, cuda))
         generated.append(new_frame)
 
         # Update gif with loss plot
