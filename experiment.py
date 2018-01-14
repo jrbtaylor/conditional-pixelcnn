@@ -14,7 +14,7 @@ import train
 from vis import generate_between_classes
 
 def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
-        optimizer='adam', learnrate=1e-4, dropout=0.8, exp_name='pixelCNN',
+        optimizer='adam', learnrate=1e-4, dropout=0.9, exp_name='pixelCNN',
         exp_dir='~/experiments/conditional-pixelcnn/', n_classes=10, cuda=True,
         resume=False):
 
@@ -64,13 +64,13 @@ def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
               resume=resume)
 
     # Generate some between-class examples
-    generate_between_classes(model, [28, 28], [1, 7],
+    generate_between_classes(net, [28, 28], [1, 7],
                              os.path.join(exp_dir,'1-7.jpeg'), n_classes, cuda)
-    generate_between_classes(model, [28, 28], [3, 8],
+    generate_between_classes(net, [28, 28], [3, 8],
                              os.path.join(exp_dir,'3-8.jpeg'), n_classes, cuda)
-    generate_between_classes(model, [28, 28], [4, 9],
+    generate_between_classes(net, [28, 28], [4, 9],
                              os.path.join(exp_dir,'4-9.jpeg'), n_classes, cuda)
-    generate_between_classes(model, [28, 28], [5, 6],
+    generate_between_classes(net, [28, 28], [5, 6],
                              os.path.join(exp_dir,'5-6.jpeg'), n_classes, cuda)
 
 
