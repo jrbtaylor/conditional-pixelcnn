@@ -80,7 +80,7 @@ def generate(model, img_size, y, cuda=True):
 def generate_between_classes(model, img_size, classes, saveto,
                              n_classes, cuda=True):
     y = np.zeros((1,n_classes), dtype='float32')
-    y[classes] = 1/len(classes)
+    y[:,classes] = 1/len(classes)
     y = np.repeat(y,10,axis=0)
     gen = tile_images(generate(model, img_size, y, cuda),r=1)
     imageio.imsave(saveto,gen.astype('uint8'))
