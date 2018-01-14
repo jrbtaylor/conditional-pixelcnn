@@ -82,7 +82,6 @@ def fit(train_loader, val_loader, model, exp_path, label_preprocess, loss_fcn,
         generated = list(np.load(os.path.join(exp_path,'generated.npy')))
         plots = list(np.load(os.path.join(exp_path,'generated_plot.npy')))
         print('Resuming from epoch %i'%start_epoch)
-        model = torch.load(os.path.join(exp_path, 'best_checkpoint'))
 
     def save_img(x,filename):
         Image.fromarray((255*x).astype('uint8')).save(filename)
