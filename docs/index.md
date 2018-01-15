@@ -22,7 +22,7 @@ PixelRNNs are an autoregressive model of the joint prior distribution for images
 <p style="text-align: center;"> p(x) = p(x<sub>0</sub>) &prod; p(x<sub>i</sub>| x<sub>i<</sub>) </p>
 
 PixelRNNs are slow to train since the recurrence can't be parallelized &mdash; even small images have hundreds or thousands of pixels, which is a relatively long sequence for RNNs.
-Replacing the recurrence with masked convolutions, such that the convolution filter only sees pixels above and to the left, allows for faster training.
+Replacing the recurrence with masked convolutions, such that the convolution filter only sees pixels above and to the left, allows for faster training (figure from [conditional PixelCNN paper](https://arxiv.org/abs/1606.05328)).
 
 ![masked-convolution](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/mask.png?raw=true)
 
@@ -31,11 +31,11 @@ However, it's worth noting that the [original PixelCNN implementation](https://a
 One possible reason for the degraded results, conjectured in the follow-up paper ([Conditional Image Generation with PixelCNN Decoders](https://arxiv.org/abs/1606.05328)), is the relative simplicity of the ReLU activations in the PixelCNN compared to the gated connections in the LSTM.
 The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activations:
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigma;(W<sub>g</sub>&lowast; x) </p>
-Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
+Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted (figure from [conditional PixelCNN paper](https://arxiv.org/abs/1606.05328)):
 
 ![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/blindspot.png?raw=true)
 
-
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/blindspot.png?raw=true" /></div>
 
 
 #### PixelCNNs vs GANs
