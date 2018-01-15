@@ -6,7 +6,6 @@ import json
 import os
 
 import torch
-import numpy as np
 
 import data
 import model
@@ -44,19 +43,12 @@ def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
         net = torch.load(os.path.join(exp_dir, 'last_checkpoint'))
 
     # Data loaders
-    train_loader,val_loader, onehot_fcn = data.loader(dataset, batch_size)
-
-    # Up-weight 1s (~8x rarer) to balance loss, interpolate intermediate values
-    weight = np.linspace(1, 5, n_bins, dtype='float32')
-    weight = weight/np.mean(weight)
-    weight = torch.from_numpy(weight)
-    if cuda:
-        weight = weight.cuda()
+    train_loader, val_loader, onehot_fcn = data.loader(dataset, batch_size)
 
     # Define loss fcn, incl. label formatting from input
     def input2label(x):
         return torch.squeeze(torch.round((n_bins-1)*x).type(torch.LongTensor),1)
-    loss_fcn = torch.nn.NLLLoss2d(torch.autograd.Variable(weight))
+    loss_fcn = torch.nn.NLLLoss2d()
 
     # Train
     train.fit(train_loader, val_loader, net, exp_dir, input2label, loss_fcn,
