@@ -261,7 +261,7 @@ Let's try what I'd expect are easily confused pairs of digits: (1,7), (3,8), (4,
 The generated between-class examples do not appear as realistic as the normal examples.
 It's possible the model needs some additional training signal (e.g. teacher forcing from a classifier network) to interpolate along the image manifold like that.
 This is somewhat disappointing because I had hoped that generating between-class examples might allow for a learned form of mixup to be used (rather than averaging images).
-
+Obviously, testing this idea further would require many more GPUs to generate batches of inputs so it's out of my range for now anyway.
 
 
 ## Miscellaneous Thoughts on PyTorch
