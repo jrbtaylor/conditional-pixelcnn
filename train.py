@@ -80,7 +80,7 @@ def fit(train_loader, val_loader, model, exp_path, label_preprocess, loss_fcn,
         stall = len(stats['loss']['val'])-np.argmin(stats['loss']['val'])-1
         start_epoch = len(stats['loss']['val'])-1
         generated = list(np.load(os.path.join(exp_path,'generated.npy')))
-        plots = list(np.load(os.path.join(exp_path,'generated_plot.npy')))
+        plots = list(np.load(os.path.join(exp_path,'generated_plots.npy')))
         print('Resuming from epoch %i'%start_epoch)
 
     def save_img(x,filename):
