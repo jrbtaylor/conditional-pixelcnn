@@ -4,29 +4,6 @@ tagline:
 description: A PyTorch implementation of Conditional PixelCNNs to generate between-class examples
 ---
 
-outline:
-1. Motivation: want to learn PyTorch; want to see if (believable) between-class examples can be generated with a conditional PixelCNN (maybe to train a better classifier)
-2. PyTorch basics (i.e. dynamic computer graphs, no sessions/compiling)
-3. Conditional PixelCNN: PixelCNN intro; PixelCNN vs GAN (Bayesian vs ill-defined objective); didn't fix blindspot problem (for quick implementation) but added gated activations and conditional vector; code snippets as needed to explain/highlight things; hyperparams
-4. Results: training curve and final output (0-9); between-class examples for 1/7, 3/8, 4/9, 5/6 on a continuum of soft-labels (1-0,0.9-0.1,0.8-0.2,...,0-1)
-5. Discussion: mention possible use of generated between-class examples for a learned mixup (rather than averaging pixels), though this would require multiple GPUs working to generate batches of new examples for training the classifier
-
-## markdown cheatsheet:
-*italics*
-**bold**
-~~strikethrough~~
-[inline-style link](https://www.google.com)
-![image name](https://imageurl "mouse-over text")
-```python
-s = "Python syntax highlighting"
-print s
-```
-
-horizontal rule is 3 or more underscores
-
-
-
-
 ## Motivation
 This is the first of what I expect will be a few posts.
 I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
