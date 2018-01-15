@@ -24,7 +24,7 @@ PixelRNNs are an autoregressive model of the joint prior distribution for images
 PixelRNNs are slow to train since the recurrence can't be parallelized &mdash; even small images have hundreds or thousands of pixels, which is a relatively long sequence for RNNs.
 Replacing the recurrence with masked convolutions, such that the convolution filter only sees pixels above and to the left, allows for faster training.
 
-![masked-convolution](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/mask.png?raw=true)
+![masked-convolution](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/mask.png?raw=true)
 
 
 However, it's worth noting that the [original PixelCNN implementation](https://arxiv.org/abs/1601.06759) produced worse results than the PixelRNN.
@@ -33,7 +33,7 @@ The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activa
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigma;(W<sub>g</sub>&lowast; x) </p>
 Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted:
 
-![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/blindspot.png?raw=true)
+![masked-convolution blind spot](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/image/blindspot.png?raw=true)
 
 
 
@@ -215,25 +215,25 @@ The learning rate definitely could've been higher but this makes for a more inte
 
 ## Results
 
-![generated images](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/generated_plot.gif?raw=true)
+![generated images](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/generated_plot.gif?raw=true)
 
 The gif above shows a batch of 50 images (5 examples per class) generated after each epoch throughout training, from seemingly random scribbles to something resembling actual digits.
 Here's the results at the best epoch:
 
-![best generated](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/best_generated.jpeg?raw=true)
+![best generated](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/best_generated.jpeg?raw=true)
 
 The motivation for this work was to see if a Conditional PixelCNN could also generate reasonable examples between classes.
 This is done by conditioning on soft labels instead of one-hot encoded labels.
 
 Let's try what I'd expect are easily confused pairs of digits: (1,7), (3,8), (4,9), (5,6)
 
-![generated between-class examples: (1,7)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/1-7.jpeg?raw=true)
+![generated between-class examples: (1,7)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/1-7.jpeg?raw=true)
 
-![generated between-class examples: (3,8)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/3-8.jpeg?raw=true)
+![generated between-class examples: (3,8)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/3-8.jpeg?raw=true)
 
-![generated between-class examples: (4,9)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/4-9.jpeg?raw=true)
+![generated between-class examples: (4,9)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/4-9.jpeg?raw=true)
 
-![generated between-class examples: (5,6)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/5-6.jpeg?raw=true)
+![generated between-class examples: (5,6)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/5-6.jpeg?raw=true)
 
 The generated between-class examples do not appear as realistic as the normal examples.
 It's possible the model needs some additional training signal (e.g. teacher forcing from a classifier network) to interpolate along the image manifold like that.
