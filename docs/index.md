@@ -6,7 +6,7 @@ description: A PyTorch implementation of Conditional PixelCNNs to generate betwe
 
 ## Motivation
 This is the first of what I expect will be a few posts.
-I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
+I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formatting was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
 
 For 2018, my new year's resolution is to write 5 posts (as Github project pages). I wanted to play with PixelCNNs and finally try [PyTorch](http://pytorch.org) (I use Tensorflow for my work at [Envision.AI](http://envision.ai) and previously used Theano at McGill) so this post will include my thoughts on both.
 In particular, I was curious if PixelCNNs conditioned on class labels could generate believable between-class examples.
