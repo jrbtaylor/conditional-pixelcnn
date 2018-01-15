@@ -57,7 +57,7 @@ def clearline():
     print(CURSOR_UP_ONE+ERASE_LINE+CURSOR_UP_ONE)
 
 
-def generate(model, img_size, y, cuda=True):
+def generate(model, img_size, y, temp=0.8, cuda=True):
     model.eval()
     gen = torch.from_numpy(np.zeros([y.shape[0], 1]+img_size, dtype='float32'))
     y = torch.from_numpy(y)
@@ -70,6 +70,8 @@ def generate(model, img_size, y, cuda=True):
         for c in range(img_size[1]):
             out = model(gen, y)
             p = torch.exp(out)[:, :, r, c]
+            p = torch.pow(p, 1/temp)
+            p = p/torch.sum(p, -1, keepdim=True)
             sample = p.multinomial(1)
             gen[:, :, r, c] = sample.float()/(out.shape[1]-1)
     clearline()
