@@ -3,8 +3,6 @@ Written by Jason Taylor <jasonrbtaylor@gmail.com> 2018-2019
 """
 
 import os
-from PIL import Image
-import random
 
 import numpy as np
 import torch
@@ -19,20 +17,9 @@ def onehot(n_classes):
     return onehot_fcn
 
 
-def augment(img_size=28,scale=0.15,rotate=15):
-    if random.random()<0.5:  # random crop & upsampling
-            resize = transforms.RandomResizedCrop(
-                img_size, scale=(1-scale,1.0), ratio=(1-scale,1/(1-scale)))
-    else:  # random pad & downsampling
-        left = random.randint(0,int(np.round(scale*img_size)))
-        right = random.randint(0,int(np.round(scale*img_size)-left))
-        top = random.randint(0,int(np.round(scale*img_size)))
-        bottom = random.randint(0, int(np.round(scale*img_size)-top))
-        resize = transforms.Compose([transforms.Pad((left,top,right,bottom)),
-                                     transforms.Resize((img_size,img_size))])
-    return transforms.Compose(
-        [resize, transforms.RandomRotation(rotate,resample=Image.BILINEAR),
-         transforms.ToTensor()])
+def augment(rotate=5):
+    return transforms.Compose([transforms.RandomRotation(rotate),
+                               transforms.ToTensor()])
 
 
 def loader(dataset, batch_size, n_workers=8):
