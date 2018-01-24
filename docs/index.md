@@ -6,7 +6,7 @@ description: A PyTorch implementation of Conditional PixelCNNs to generate betwe
 
 ## Motivation
 This is the first of what I expect will be a few posts.
-I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formating was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
+I started a [machine learning blog on WordPress](http://netsprawl.wordpress.com) in 2017 but abandoned it 2 posts in after finding that showing code without messing up the formatting was not possible &mdash; the narrow column format would wrap the code and render it unreadable.
 
 For 2018, my new year's resolution is to write 5 posts (as Github project pages). I wanted to play with PixelCNNs and finally try [PyTorch](http://pytorch.org) (I use Tensorflow for my work at [Envision.AI](http://envision.ai) and previously used Theano at McGill) so this post will include my thoughts on both.
 In particular, I was curious if PixelCNNs conditioned on class labels could generate believable between-class examples.
@@ -33,7 +33,7 @@ The Conditional PixelCNN paper subsequently replaced the ReLUs with gated activa
 <p style="text-align: center;"> y = <i>tanh</i>(W<sub>f</sub>&lowast; x) &bull; &sigma;(W<sub>g</sub>&lowast; x) </p>
 Another possible reason offered in the follow-up paper is that stacking masked convolutional filters results in blind spots, failing to capture all the pixels above the one being predicted (figure from [paper](https://arxiv.org/abs/1606.05328)):
 
-<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/blindspot.png?raw=true" /></div>
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/blindspot.jpeg?raw=true" /></div>
 
 
 #### PixelCNNs vs GANs
@@ -213,26 +213,30 @@ The learning rate definitely could've been higher but this makes for a more inte
 
 ## Results
 
-![generated images](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/generated_plot.gif?raw=true)
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/generated_plot.gif?raw=true" /></div>
 
 The gif above shows a batch of 50 images (5 examples per class) generated after each epoch throughout training, from seemingly random scribbles to something resembling actual digits.
 Here's the results at the best epoch:
 
-![best generated](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/best_generated.jpeg?raw=true)
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/best_generated.jpeg?raw=true" /></div>
 
 The motivation for this work was to see if a Conditional PixelCNN could also generate reasonable examples between classes.
 This is done by conditioning on soft labels instead of one-hot encoded labels.
 
 Let's try what I'd expect are easily confused pairs of digits: (1,7), (3,8), (4,9), (5,6)
 
-![generated between-class examples: (1,7)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/1-7.jpeg?raw=true)
 
-![generated between-class examples: (3,8)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/3-8.jpeg?raw=true)
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/1-7.jpeg?raw=true" /></div>
+ 
 
-![generated between-class examples: (4,9)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/4-9.jpeg?raw=true)
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/3-8.jpeg?raw=truee" /></div>
+ 
 
-![generated between-class examples: (5,6)](https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/5-6.jpeg?raw=true)
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/4-9.jpeg?raw=true" /></div>
+ 
 
+<div style="text-align:center"><img src ="https://github.com/jrbtaylor/conditional-pixelcnn/blob/master/docs/images/5-6.jpeg?raw=true" /></div>
+ 
 The generated between-class examples do not appear as realistic as the normal examples.
 It's possible the model needs some additional training signal (e.g. teacher forcing from a classifier network) to interpolate along the image manifold like that.
 This is somewhat disappointing because I had hoped that generating between-class examples might allow for a learned form of mixup to be used (rather than averaging images).
