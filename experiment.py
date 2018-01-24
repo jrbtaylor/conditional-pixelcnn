@@ -14,7 +14,7 @@ from vis import generate_between_classes
 
 def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
         optimizer='adam', learnrate=1e-4, dropout=0.9, exp_name='pixelCNN',
-        exp_dir='~/experiments/conditional-pixelcnn/', n_classes=10, cuda=True,
+        exp_dir='~/experiments/conditional-pixelcnn/', cuda=True,
         resume=False):
 
     exp_name += '_%s_%ifeat_%ilayers_%ibins'%(
@@ -22,6 +22,10 @@ def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
     exp_dir = os.path.join(os.path.expanduser(exp_dir), exp_name)
     if not os.path.isdir(exp_dir):
         os.makedirs(exp_dir)
+
+    # Data loaders
+    train_loader, val_loader, onehot_fcn, n_classes = data.loader(dataset,
+                                                                  batch_size)
 
     if not resume:
         # Store experiment params in params.json
@@ -41,9 +45,6 @@ def run(dataset='mnist', batch_size=64, n_features=200, n_layers=6, n_bins=4,
                 and os.path.isfile(os.path.join(exp_dir,'last_checkpoint'))):
             raise Exception('Missing param, stats or checkpoint file on resume')
         net = torch.load(os.path.join(exp_dir, 'last_checkpoint'))
-
-    # Data loaders
-    train_loader, val_loader, onehot_fcn = data.loader(dataset, batch_size)
 
     # Define loss fcn, incl. label formatting from input
     def input2label(x):
