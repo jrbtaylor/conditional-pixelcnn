@@ -20,7 +20,7 @@ from vis import plot_stats, clearline, generate, tile_images
 
 
 def generate_images(model,img_size,n_classes,onehot_fcn,cuda=True):
-    y = np.array(list(range(n_classes))*5)
+    y = np.array(list(range(min(n_classes,10)))*5)  # gpu mem limit
     y = np.concatenate([onehot_fcn(x)[np.newaxis,:] for x in y])
     return generate(model, img_size, y, cuda)
 
